@@ -40,7 +40,7 @@ var boardSettings = {
 	outerRadius:5,
 	shadowX:2,
 	shadowY:5,
-	pieceDrag: true, //true for drag and drop, false for select to move
+	pieceDrag: false, //true for drag and drop, false for select to move
 	tweenSlideSpeed:.3,
 	tweenJumpSpeed:.3,
 	tweenJumpScale:1.5,
