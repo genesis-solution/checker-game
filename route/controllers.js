@@ -5,6 +5,7 @@ const request = require('request');
 const xml2js = require('xml2js');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 
 async function login(req, res) {
   const { t } = req.body;
@@ -392,6 +393,20 @@ async function result(req, res) {
     }
   }
 
+async function getposition(req, res) {
+
+  var { data } = req.body;
+
+  try {
+    const response = await axios.post('http://localhost:3003/extract-move', { data });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.json({success: false})
+  }
+}
+
+
 function getUserInfo(req, res) {
   res.json(req.user);
 }
@@ -603,4 +618,4 @@ function getCurrentTime(req, res) {
   res.json({ currentTime });
 }
 
-module.exports = { login, register, logout, generateJWTtoken, result, getUserInfo, getBotInfo, setLog, getCurrentTime };
+module.exports = { login, register, logout, generateJWTtoken, result, getUserInfo, getBotInfo, setLog, getCurrentTime, getposition };

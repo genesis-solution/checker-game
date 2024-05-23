@@ -2484,8 +2484,9 @@ function togglePlayer(){
  */
 function moveAI() {
 	gameData.moving = true;
+	var postData = []
 
-    var thisPiece = null;
+	var thisPiece = null;
     var diag = null;
     var jumps = getJumps(gameData.player);
     if (jumps.length) {
@@ -2499,32 +2500,82 @@ function moveAI() {
 		animatePiece(thisPiece, false, moveAINext, thisPiece);
         return;
     }
-    var moves = [];
-    for (var i = 0; i < gameData.piece.length; i++) {
-        thisPiece = gameData.piece[i];
-        if (thisPiece.color == gameData.player) {
-            var diags = getDiags(thisPiece);
-            for (var j = 0; j < diags.length; j++) {
-                diag = diags[j];
-                var diagPc = getPieceAtSquare(thisPiece.nx + diag[0], thisPiece.ny + diag[1]);
-                if (diagPc == 0) {
-                    moves.push([thisPiece, diag]);
-                }
-            }
-        }
-    }
-    if (!moves.length) {
-        nextPlayerTurn();
-        return;
-    }
 
-	move = getBestMove(moves);
-	thisPiece = move[0];
-	diag = move[1];
+	for (var i = 0; i < gameData.piece.length; i++) {
+		if (gameData.piece[i].visible == true)
+		{
+			postData.push({
+				id: gameData.piece[i].id,
+				color: gameData.piece[i].color,
+				nx: gameData.piece[i].nx,
+				ny: gameData.piece[i].ny
+			});
+		}
+	}
 
-	thisPiece.dnx = thisPiece.nx + diag[0];
-	thisPiece.dny = thisPiece.ny + diag[1];
-	animatePiece(thisPiece, true);
+	if (postData.length > 0) {
+
+		const urlParams = new URLSearchParams(window.location.search);
+		const tokenkey = urlParams.get('t');
+		if (tokenkey != null && tokenkey != '')
+		{
+			$.ajax({
+				url: '/getposition',
+				type: 'POST',
+				data: {
+					't': localStorage.getItem('t'),
+					'run': 1,
+					'gameID': 2,
+					'data': postData
+				},
+				success: function(response) {
+
+					if (response.success == true) {
+
+						var moves = [];
+
+						for (var i = 0; i < gameData.piece.length; i++) {
+							thisPiece = gameData.piece[i];
+							if (thisPiece.color == gameData.player) {
+								var diags = getDiags(thisPiece);
+								for (var j = 0; j < diags.length; j++) {
+									diag = diags[j];
+									var diagPc = getPieceAtSquare(thisPiece.nx + diag[0], thisPiece.ny + diag[1]);
+									if (diagPc == 0) {
+										moves.push([thisPiece, diag]);
+									}
+								}
+							}
+						}	
+						
+						if (!moves.length) {
+							nextPlayerTurn();
+							return;
+						}
+
+						for (let index_move = 0; index_move < moves.length; index_move++) {
+							if (moves[index_move][0].nx == response.start.x && moves[index_move][0].ny == response.start.y) {
+								var move = moves[index_move];
+								thisPiece = move[0];
+								thisPiece.dnx = response.end.x;
+								thisPiece.dny = response.end.y;
+								animatePiece(thisPiece, true);
+							}
+						}
+
+					}
+					else {
+						nextPlayerTurn();
+						return;
+					}
+				},
+				error: function(xhr, status, error) {
+					console.log(status, error);
+				}
+			});
+		}
+
+	}
 }
 
 function moveAINext(thisPiece){

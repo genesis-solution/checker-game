@@ -9,8 +9,11 @@ const path = require('path');
 function authenticateToken(req, res, next) {
   let tokenID = req.query.t;
 
+  let run = 0
   if (tokenID == null && req.body.t != undefined) {
     tokenID = req.body.t;
+
+    if (req.body.run != undefined && req.body.run == 1) run = 1;
   }
 
   if (req.query.e != undefined) {
@@ -83,11 +86,16 @@ function authenticateToken(req, res, next) {
                   next();
                 }
                 else {
-                  console.log("88", userInfo.ResultMessage)
-                  const errorMessage = 'https://www.player1.win/games/2/checkers?e=' + userInfo.ResultMessage;
-                  const errorHtml = fs.readFileSync(path.join(__dirname, '../public', 'error.html'), 'utf8');
-                  const htmlWithErrorMessage = errorHtml.replace('{{ errorMessage }}', errorMessage);
-                  return res.status(400).send(htmlWithErrorMessage);
+                  if (run == 1 && userInfo.ResultMessage == 'Game is already running or finished') {
+                    next();
+                  }
+                  else {
+                    console.log("88", userInfo.ResultMessage)
+                    const errorMessage = 'https://www.player1.win/games/2/checkers?e=' + userInfo.ResultMessage;
+                    const errorHtml = fs.readFileSync(path.join(__dirname, '../public', 'error.html'), 'utf8');
+                    const htmlWithErrorMessage = errorHtml.replace('{{ errorMessage }}', errorMessage);
+                    return res.status(400).send(htmlWithErrorMessage);
+                  }
                 }
               } catch (error_) {
                 console.log(error_)
