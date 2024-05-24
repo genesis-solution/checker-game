@@ -828,8 +828,13 @@ function getCountryFromIP(n) {
 		}
 	} else {
 		if (Player2.CountryName != '') {
-			// selectedCountryName = countryNameToCode[Player2.CountryName];
-			return Player2.CountryName.replace(/ /g, '-');;
+			// selectedCountryName = countryNameToCode[Plaer2.CountryName];
+			console.log(Player2.CountryName)
+			try {
+				return Player2.CountryName.replace(/ /g, '-');
+			} catch (error) {
+				return 'default';
+			}
 		}
 	}
 	

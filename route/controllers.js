@@ -430,6 +430,7 @@ function getBotInfo(req, res) {
       <ns1:`+func_name+` env:encodingStyle="http://www.w3.org/2003/05/soap-encoding">
       <GameId xsi:type="xsd:int">`+GAMEID+`</GameId>
       <betUSD xsi:type="xsd:double">`+betUsd+`</betUSD>
+      <count xsi:type="xsd:int">`+1+`</count>
       </ns1:`+func_name+`>
       </env:Body>
       </env:Envelope>
@@ -451,12 +452,12 @@ function getBotInfo(req, res) {
                 const resultValue = result['SOAP-ENV:Envelope']['SOAP-ENV:Body'][0]['NS1:'+func_name+'Response'][0]['return'][0]['_'];
                 var userInfo = JSON.parse(resultValue)
 
-                if (userInfo.ResultCode == undefined && userInfo.ResultMessage == undefined) {
+                if (userInfo != null && userInfo.length > 0) {
                   res.json({
-                    username: userInfo.Name + '(' + userInfo.entityId + ')',
-                    CountryName: userInfo.CountryName,
-                    TokenId: userInfo.TokenId,
-                    entityId: userInfo.entityId,
+                    username: userInfo[0].Name + '(' + userInfo[0].entityId + ')',
+                    CountryName: userInfo[0].CountryName,
+                    TokenId: userInfo[0].TokenId,
+                    entityId: userInfo[0].entityId,
                     betUsd: betUsd,
                     Status: 0
                   })
