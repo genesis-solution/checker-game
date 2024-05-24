@@ -48,7 +48,7 @@ var boardSettings = {
 	showPlayerHighlight:true,
 	showPlayerMove: true,
 	timer:90000,
-	timerDown: 60000
+	timerDown: 15000
 };
 
 const possibleColors = [
@@ -145,7 +145,7 @@ var shareMessage = 'I just won $[SCORE] on player1.win, Let’s play Connect Fou
 $.editor = {enable:false};
 var playerData = {score:0, opponentScore:0};
 var gameData = {paused:true, moving:false, icon:0, iconSwitch:false, icons:['white','black'], type:'classic', custom:{size:0}, settings:{size:0, multipleJump:true, rowFill:0}, drag:{status:false,x:0,y:0}, player:0, ai:false, aiMove:false, complete:false};
-var timeData = {countdown: 60000, enable:false, startDate:null, nowDate:null, timer:0, oldTimer:0, isDown: false, playerTimer:60000, opponentTimer:0, playerAccumulate:60000, opponentAccumulate:0};
+var timeData = {countdown: 15000, enable:false, startDate:null, nowDate:null, timer:0, oldTimer:0, isDown: false, playerTimer:60000, opponentTimer:0, playerAccumulate:60000, opponentAccumulate:0};
 var tweenData = {score:0, tweenScore:0};
 
 /*!
@@ -1345,7 +1345,7 @@ document.addEventListener('keydown', function(event) {
 // Disable context menu "Reload"
 document.addEventListener('contextmenu', function(event) {
 	event.preventDefault();
-	preventRefresh(event);
+	// preventRefresh(event);
 });
 
 function preventRefresh(event) {
@@ -2565,12 +2565,63 @@ function moveAI() {
 
 					}
 					else {
-						nextPlayerTurn();
-						return;
+						var moves = [];
+						for (var i = 0; i < gameData.piece.length; i++) {
+							thisPiece = gameData.piece[i];
+							if (thisPiece.color == gameData.player) {
+								var diags = getDiags(thisPiece);
+								for (var j = 0; j < diags.length; j++) {
+									diag = diags[j];
+									var diagPc = getPieceAtSquare(thisPiece.nx + diag[0], thisPiece.ny + diag[1]);
+									if (diagPc == 0) {
+										moves.push([thisPiece, diag]);
+									}
+								}
+							}
+						}
+						if (!moves.length) {
+							nextPlayerTurn();
+							return;
+						}
+
+						move = getBestMove(moves);
+						thisPiece = move[0];
+						diag = move[1];
+
+						thisPiece.dnx = thisPiece.nx + diag[0];
+						thisPiece.dny = thisPiece.ny + diag[1];
+						animatePiece(thisPiece, true);
 					}
 				},
 				error: function(xhr, status, error) {
 					console.log(status, error);
+
+					var moves = [];
+					for (var i = 0; i < gameData.piece.length; i++) {
+						thisPiece = gameData.piece[i];
+						if (thisPiece.color == gameData.player) {
+							var diags = getDiags(thisPiece);
+							for (var j = 0; j < diags.length; j++) {
+								diag = diags[j];
+								var diagPc = getPieceAtSquare(thisPiece.nx + diag[0], thisPiece.ny + diag[1]);
+								if (diagPc == 0) {
+									moves.push([thisPiece, diag]);
+								}
+							}
+						}
+					}
+					if (!moves.length) {
+						nextPlayerTurn();
+						return;
+					}
+
+					move = getBestMove(moves);
+					thisPiece = move[0];
+					diag = move[1];
+
+					thisPiece.dnx = thisPiece.nx + diag[0];
+					thisPiece.dny = thisPiece.ny + diag[1];
+					animatePiece(thisPiece, true);
 				}
 			});
 		}
@@ -2885,9 +2936,6 @@ function updateTimerDown(){
 		timerDownTxt.text = ""
 		timerDownTxt.visible = false;
 
-		if (socket != null)
-			socket.emit('beforeautogame', {})
-
 		$.ajax({
 			url: '/bot/info',
 			type: 'GET',
@@ -2897,7 +2945,7 @@ function updateTimerDown(){
 					betUsd: Player1.betUsd
 				},
 			success: function(response) {
-				
+
 				Player2 = response;
 
 				textDisplay.computer = removeCharsBetweenParentheses(response.username);
@@ -2908,10 +2956,11 @@ function updateTimerDown(){
 				goPage('game');
 
 				startGame();
+
 			},
 			error: function(xhr, status, error) {
 				// Handle errors
-				
+
 				if (socket != null) {
 					socket.disconnect();
 				}
@@ -2945,9 +2994,9 @@ function endGame(){
 	gameData.paused = true;
 	toggleGameTimer(false);
 
-	TweenMax.to(gameContainer, 3, {overwrite:true, onComplete:function(){
+	//TweenMax.to(gameContainer, 3, {overwrite:true, onComplete:function(){
 		goPage('result')
-	}});
+	//}});
 }
 
 /*!
