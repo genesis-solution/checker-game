@@ -144,7 +144,7 @@ var shareMessage = 'I just won $[SCORE] on player1.win, Let’s play Connect Fou
  */
 $.editor = {enable:false};
 var playerData = {score:0, opponentScore:0};
-var gameData = {paused:true, moving:false, icon:0, iconSwitch:false, icons:['white','black'], type:'classic', custom:{size:0}, settings:{size:0, multipleJump:true, rowFill:0}, drag:{status:false,x:0,y:0}, player:0, ai:false, aiMove:false, complete:false};
+var gameData = {paused:true, moving:false, icon:1, iconSwitch:false, icons:['white','black'], type:'classic', custom:{size:0}, settings:{size:0, multipleJump:true, rowFill:0}, drag:{status:false,x:0,y:0}, player:0, ai:false, aiMove:false, complete:false};
 var timeData = {countdown: 15000, enable:false, startDate:null, nowDate:null, timer:0, oldTimer:0, isDown: false, playerTimer:60000, opponentTimer:0, playerAccumulate:60000, opponentAccumulate:0};
 var tweenData = {score:0, tweenScore:0};
 
@@ -2488,6 +2488,7 @@ function togglePlayer(){
  * 
  */
 function moveAI() {
+
 	gameData.moving = true;
 	var postData = []
 
@@ -2513,7 +2514,8 @@ function moveAI() {
 				id: gameData.piece[i].id,
 				color: gameData.piece[i].color,
 				nx: gameData.piece[i].nx,
-				ny: gameData.piece[i].ny
+				ny: gameData.piece[i].ny,
+				isKing: gameData.piece[i].currentAnimation.indexOf('king') != -1 ? 1 : 0
 			});
 		}
 	}
