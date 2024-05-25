@@ -145,7 +145,7 @@ var shareMessage = 'I just won $[SCORE] on player1.win, Let’s play Connect Fou
 $.editor = {enable:false};
 var playerData = {score:0, opponentScore:0};
 var gameData = {paused:true, moving:false, icon:1, iconSwitch:false, icons:['white','black'], type:'classic', custom:{size:0}, settings:{size:0, multipleJump:true, rowFill:0}, drag:{status:false,x:0,y:0}, player:0, ai:false, aiMove:false, complete:false};
-var timeData = {countdown: 15000, enable:false, startDate:null, nowDate:null, timer:0, oldTimer:0, isDown: false, playerTimer:60000, opponentTimer:0, playerAccumulate:60000, opponentAccumulate:0};
+var timeData = {countdown: 30000, enable:false, startDate:null, nowDate:null, timer:0, oldTimer:0, isDown: false, playerTimer:60000, opponentTimer:0, playerAccumulate:60000, opponentAccumulate:0};
 var tweenData = {score:0, tweenScore:0};
 
 /*!
@@ -829,7 +829,6 @@ function getCountryFromIP(n) {
 	} else {
 		if (Player2.CountryName != '') {
 			// selectedCountryName = countryNameToCode[Plaer2.CountryName];
-			console.log(Player2.CountryName)
 			try {
 				return Player2.CountryName.replace(/ /g, '-');
 			} catch (error) {
@@ -967,7 +966,6 @@ function goPage(page){
 
 			if (!gameData.ai) {
 				timeData.oldTimer = -1;
-				timeData.countdown = boardSettings.timerDown
 				timeData.isDown = true
 				toggleGameTimer(true);
 				//timerDownTxt.text = millisecondsToTimeGame(timeData.countdown);
@@ -2925,7 +2923,7 @@ function updateTimerDownGame(){
 	if (timeData.isDown && timeData.startDate != null) {
 		timeData.nowDate = new Date();
 		timeData.elapsedTime = Math.floor((timeData.nowDate.getTime() - timeData.startDate.getTime()));
-		timeData.timer = Math.floor((timeData.countdown) - (timeData.elapsedTime));
+		timeData.timer = Math.floor((boardSettings.timerDown) - (timeData.elapsedTime));
 
 		updateTimerDown();
 	}
