@@ -133,12 +133,21 @@ function handleSocketEvents(io) {
         socket.on('move', (moveData) => {
             const roomName1 = findRoomBySocketId(socket.id);
             if (roomName1) {
-                for (const roomName in rooms) {
-                    if (rooms.hasOwnProperty(roomName)) {
-                        const room = rooms[roomName];
-                        io.to(room.player2.id).emit('opponentMove', moveData);
-                        io.to(room.player1.id).emit('opponentMove', moveData);
-                    }
+                if (rooms.hasOwnProperty(roomName1)) {
+                    const room = rooms[roomName1];
+                    io.to(room.player2.id).emit('opponentMove', moveData);
+                    io.to(room.player1.id).emit('opponentMove', moveData);
+                }
+            } else {
+                console.log("room not found");
+            }
+        });
+
+        socket.on('move_click', (moveData) => {
+            const roomName1 = findRoomBySocketId(socket.id);
+            if (roomName1) {
+                if (rooms.hasOwnProperty(roomName1)) {
+                    socket.to(roomName1).emit('opponentMove_click', moveData);
                 }
             } else {
                 console.log("room not found");
@@ -164,13 +173,11 @@ function handleSocketEvents(io) {
         socket.on('updatetimer', (timer) => {
             const roomName1 = findRoomBySocketId(socket.id);
             if (roomName1) {
-                for (const roomName in rooms) {
-                    if (rooms.hasOwnProperty(roomName)) {
-                        const room = rooms[roomName];
-                        if (room.player1.id === socket.id || room.player2.id === socket.id) {
-                            io.to(room.player1.id).emit('updatetimer', timer);
-                            io.to(room.player2.id).emit('updatetimer', timer);
-                        }
+                if (rooms.hasOwnProperty(roomName1)) {
+                    const room = rooms[roomName1];
+                    if (room.player1.id === socket.id || room.player2.id === socket.id) {
+                        io.to(room.player1.id).emit('updatetimer', timer);
+                        io.to(room.player2.id).emit('updatetimer', timer);
                     }
                 }
             }
@@ -179,15 +186,14 @@ function handleSocketEvents(io) {
         socket.on('giveup', (playerName) => {
             const roomName1 = findRoomBySocketId(socket.id);
             if (roomName1) {
-            for (const roomName in rooms) {
-                if (rooms.hasOwnProperty(roomName)) {
-                    const room = rooms[roomName];
+                if (rooms.hasOwnProperty(roomName1)) {
+                    const room = rooms[roomName1];
                     if (room.player1.id === socket.id || room.player2.id === socket.id) {
                         io.to(room.player1.id).emit('giveup', playerName);
                         io.to(room.player2.id).emit('giveup', playerName);
                     }
                 }
-            }
+                
             }
         });
 
@@ -224,7 +230,6 @@ function handleSocketEvents(io) {
         });
 
         socket.on('disconnect', () => {
-            const roomName1 = findRoomBySocketId(socket.id);
 
             const index = waitingPlayers.findIndex(obj => obj.id == socket.id);
             if (index !== -1) {
@@ -235,6 +240,8 @@ function handleSocketEvents(io) {
             if (index3 !== -1) {
                 waitingPlayers.splice(index3, 1);
             }
+
+            const roomName1 = findRoomBySocketId(socket.id);
 
             if (roomName1) {
                 for (const roomName in rooms) {
@@ -313,7 +320,6 @@ function handleSocketEvents(io) {
         });
 
         socket.on('disconnect_game', () => {
-            const roomName1 = findRoomBySocketId(socket.id);
 
             const index = waitingPlayers.findIndex(obj => obj.id == socket.id);
             if (index !== -1) {
@@ -325,7 +331,7 @@ function handleSocketEvents(io) {
                 waitingPlayers.splice(index3, 1);
             }
 
-            console.log("roomName", roomName1)
+            const roomName1 = findRoomBySocketId(socket.id);
 
             if (roomName1) {
                 // Inform the other player in the room about disconnection

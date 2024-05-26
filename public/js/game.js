@@ -1199,6 +1199,17 @@ function createSocket() {
 		}
 	});
 
+	socket.on('opponentMove_click', (moveData) => {
+		// Handle opponent's move
+		if (gameData.ai == false) {
+			if (moveData.isSelect == true) {
+				getCurrentPiece(moveData.row, moveData.column);
+			} else {
+				movePlayer(moveData.row, moveData.column);
+			}
+		}
+	});
+
 	socket.on('sendEmoji', (emojiName) => {
 		showEmojiConvert(emojiName.name);
 	});
@@ -1565,9 +1576,11 @@ function buildBoard(){
 								postSocketUpdate('moveplayer', {row:evt.target.row, column:evt.target.column, pieceIndex:gameData.pieceIndex});
 							}else{
 								movePlayer(evt.target.row, evt.target.column);
+								socket.emit("move_click", {row:evt.target.row, column:evt.target.column, isSelect: false})
 							}
 						}else{
 							getCurrentPiece(evt.target.row, evt.target.column);
+							socket.emit("move_click", {row:evt.target.row, column:evt.target.column, isSelect: true})
 						}
 					});
 				}
@@ -2900,6 +2913,8 @@ function updateTimer(){
 	let limitMiliSeconds = 0;
 	if (timeData.playerTimer < limitMiliSeconds)
 	{
+		console.log(timeData.playerTimer)
+		gameData.paused = true;
 		if (socket != null) {
 			socket.emit('giveup', 0);
 		} else {
@@ -2910,6 +2925,8 @@ function updateTimer(){
 
 	if (timeData.opponentTimer < limitMiliSeconds)
 	{
+		console.log(timeData.opponentTimer)
+		gameData.paused = true;
 		if (socket != null) {
 			socket.emit('giveup', 1);
 		} else {
