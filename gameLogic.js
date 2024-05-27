@@ -36,8 +36,8 @@ function handleSocketEvents(io) {
                     console.log("created room", roomName)
 
 
-                    let obj_player1 = { id: player1.id, name: player1.playerName, username: player1.playerName, playerName: player1.playerName, CountryName: player1.CountryName, entityId: player1.entityId, TokenId: player1.TokenId, gameID: player1.gameID, Status: player1.Status, betUsd: player1.betUsd, CountryName: player1.CountryName, isBot: player1.isBot };
-                    let obj_player2 = { id: player2.id, name: player2.playerName, username: player2.playerName, playerName: player2.playerName, CountryName: player2.CountryName, entityId: player2.entityId, TokenId: player2.TokenId, gameID: player2.gameID, Status: player2.Status, betUsd: player2.betUsd, CountryName: player2.CountryName, isBot: player2.isBot };
+                    let obj_player1 = { id: player1.id, name: player1.playerName, username: player1.playerName, playerName: player1.playerName, CountryName: player1.CountryName, entityId: player1.entityId, TokenId: player1.TokenId, gameID: 2, Status: player1.Status, betUsd: player1.betUsd, CountryName: player1.CountryName, isBot: player1.isBot };
+                    let obj_player2 = { id: player2.id, name: player2.playerName, username: player2.playerName, playerName: player2.playerName, CountryName: player2.CountryName, entityId: player2.entityId, TokenId: player2.TokenId, gameID: 2, Status: player2.Status, betUsd: player2.betUsd, CountryName: player2.CountryName, isBot: player2.isBot };
 
                     try {
                         const url = server_url;
@@ -185,15 +185,16 @@ function handleSocketEvents(io) {
 
         socket.on('giveup', (playerName) => {
             const roomName1 = findRoomBySocketId(socket.id);
+
             if (roomName1) {
+
+                console.log("roomname", roomName1);
+
                 if (rooms.hasOwnProperty(roomName1)) {
-                    const room = rooms[roomName1];
-                    if (room.player1.id === socket.id || room.player2.id === socket.id) {
-                        io.to(room.player1.id).emit('giveup', playerName);
-                        io.to(room.player2.id).emit('giveup', playerName);
-                    }
+
+                    console.log("giveup", playerName)
+                    io.to(roomName1).emit('giveup', playerName);
                 }
-                
             }
         });
 

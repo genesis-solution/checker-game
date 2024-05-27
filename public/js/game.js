@@ -145,7 +145,7 @@ var shareMessage = 'I just won $[SCORE] on player1.win, Let’s play Connect Fou
 $.editor = {enable:false};
 var playerData = {score:0, opponentScore:0};
 var gameData = {paused:true, moving:false, icon:1, iconSwitch:false, icons:['white','black'], type:'classic', custom:{size:0}, settings:{size:0, multipleJump:true, rowFill:0}, drag:{status:false,x:0,y:0}, player:0, ai:false, aiMove:false, complete:false};
-var timeData = {countdown: 30000, enable:false, startDate:null, nowDate:null, timer:0, oldTimer:0, isDown: false, playerTimer:60000, opponentTimer:0, playerAccumulate:60000, opponentAccumulate:0};
+var timeData = {countdown: 30000, enable:false, startDate:null, nowDate:null, timer:0, oldTimer:0, isDown: false, playerTimer:30000, opponentTimer: 30000, playerAccumulate:60000, opponentAccumulate:0};
 var tweenData = {score:0, tweenScore:0};
 
 /*!
@@ -2913,8 +2913,6 @@ function updateTimer(){
 	let limitMiliSeconds = 0;
 	if (timeData.playerTimer < limitMiliSeconds)
 	{
-		console.log(timeData.playerTimer)
-		gameData.paused = true;
 		if (socket != null) {
 			socket.emit('giveup', 0);
 		} else {
@@ -2925,8 +2923,6 @@ function updateTimer(){
 
 	if (timeData.opponentTimer < limitMiliSeconds)
 	{
-		console.log(timeData.opponentTimer)
-		gameData.paused = true;
 		if (socket != null) {
 			socket.emit('giveup', 1);
 		} else {
