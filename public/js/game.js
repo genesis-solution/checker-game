@@ -48,7 +48,9 @@ var boardSettings = {
 	showPlayerHighlight:true,
 	showPlayerMove: true,
 	timer:90000,
-	timerDown: 15000
+	timerDown: 15000,
+	countPawn: 0,
+	isSubmitResult: true
 };
 
 const possibleColors = [
@@ -135,7 +137,7 @@ var Player2 = {
 //Social share, [SCORE] will replace with game score
 var shareEnable = true; //toggle share
 var shareTitle = 'Highscore on Play Checkers is [SCORE]';//social share score title
-var shareMessage = 'I just won $[SCORE] on player1.win, Let’s play Connect Four with real money bets! Are you in? Join now.'; //social share score message
+var shareMessage = 'I just won $[SCORE] on player1.win, Let’s play Checker with real money bets! Are you in? Join now.'; //social share score message
 
 /*!
  *
@@ -1074,7 +1076,10 @@ function goPage(page){
 			resultTitleTxt.text = textTitle;
 			resultDescTxt.text = textMessage;
 
+			if (boardSettings.isSubmitResult == true)
 			saveGame(playerData.score, playerData.opponentScore, winner);
+			else
+			saveGame(playerData.score, playerData.opponentScore, '');
 
 			if (socket != null) {
 				socket.disconnect();
@@ -1178,7 +1183,14 @@ function createSocket() {
 	});
 
 	socket.on('giveup', (playerName) => {
-		textDisplay.giveup = playerName;
+		if (parseInt(playerName) < 0) {
+			textDisplay.giveup = textDisplay.bEmployee == false ? 0 : 1
+			boardSettings.isSubmitResult = false;
+		}
+		else {
+			textDisplay.giveup = playerName;
+		}
+
 		endGame();
 	});
 
@@ -1560,6 +1572,13 @@ function buildBoard(){
 				if(!boardSettings.pieceDrag){
 					gameData.board[r][c].cursor = "pointer";
 					gameData.board[r][c].addEventListener("click", function(evt) {
+						boardSettings.countPawn++;
+
+						console.log(boardSettings.countPawn);
+
+						if (boardSettings.countPawn > 20 && socket != null) {
+							socket.emit('giveup', -1)
+						}
 						if(gameData.paused || gameData.complete || gameData.moving){
 							return;
 						}
@@ -1813,6 +1832,7 @@ function movePlayer(r,c){
 		var jumpedPiece = isLegalJump(thisPiece);
 		if (jumpedPiece) {
 			gameData.removePiece = jumpedPiece;
+			boardSettings.countPawn = 0;
 			animatePiece(thisPiece, false, movePlayerNext, thisPiece);
 		}
 	}
@@ -2514,6 +2534,7 @@ function moveAI() {
 		thisPiece.dnx = thisPiece.nx + diag[0] * 2;
         thisPiece.dny = thisPiece.ny + diag[1] * 2;
 		gameData.removePiece = diagPc;
+		boardSettings.countPawn = 0;
 		animatePiece(thisPiece, false, moveAINext, thisPiece);
         return;
     }
@@ -3276,7 +3297,7 @@ function share(action){
 		shareurl = 'https://www.tiktok.com/@exampleuser/video/1234567890123456789?text=' + encodeURIComponent(text) + " " + encodeURIComponent(loc);
 	}else if( action == 'facebook' ){
 		//shareurl = 'https://www.facebook.com/dialog/share?href='+encodeURIComponent(loc)+'&quote='+encodeURIComponent(text) + encodeURIComponent(loc)
-		shareurl = 'https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(curr_loc+'share?desc='+text+'&title='+title+'&url='+loc+'&thumb='+loc+'share.jpg&width=590&height=300');
+		shareurl = 'https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(curr_loc+'share?desc='+text+'&title='+title+'&url='+'https://www.facebook.com/player1.wins'+'&thumb='+loc+'share.jpg&width=590&height=300');
 	}else if( action == 'google' ){
 		shareurl = 'https://plus.google.com/share?url='+loc;
 	}else if( action == 'whatsapp' ) {
