@@ -96,6 +96,7 @@ var textDisplay = {
 					share:'SHARE YOUR SCORE:',
 					resultTitle:'GAME OVER',
 					resultDesc:'SCORE : [NUMBER] TILES',
+					
 					bEmployee: false,
 					room: '',
 					firstGame: 'yes',
@@ -970,7 +971,6 @@ function goPage(page){
 				timeData.oldTimer = -1;
 				timeData.isDown = true
 				toggleGameTimer(true);
-				//timerDownTxt.text = millisecondsToTimeGame(timeData.countdown);
 
 				$.players['player'+ 1].text = removeCharsBetweenParentheses(textDisplay.player2);
 			} else {
@@ -1077,9 +1077,9 @@ function goPage(page){
 			resultDescTxt.text = textMessage;
 
 			if (boardSettings.isSubmitResult == true)
-			saveGame(playerData.score, playerData.opponentScore, winner);
+			saveGame(playerData.score, playerData.opponentScore, winner, winStatus);
 			else
-			saveGame(playerData.score, playerData.opponentScore, '');
+			saveGame(playerData.score, playerData.opponentScore, '', winStatus);
 
 			if (socket != null) {
 				socket.disconnect();
@@ -1089,7 +1089,7 @@ function goPage(page){
 				stopGame();
 				
 				var winner = '';
-				var winStatus = '';
+				var winStatus = 'win';
 	
 				if (textDisplay.giveup == 0) {
 					winner = Player2.entityId;
@@ -1106,7 +1106,7 @@ function goPage(page){
 					}
 				}
 	
-				saveGame(playerData.score, playerData.opponentScore, winner);
+				saveGame(playerData.score, playerData.opponentScore, winner, winStatus);
 	
 				if (socket != null) {
 					socket.disconnect();
@@ -1133,7 +1133,6 @@ function createSocket() {
 	socket.on('startGamebySocket', (players) => {
 		// Start the game
 		timeData.isDown = false
-		timerDownTxt.text = ""
 		textDisplay.bEmployee = false
 		Player1.games_entryID = players[0].games_entryID;
 		Player1.prizeUSD = players[0].prizeUSD;
@@ -1311,7 +1310,7 @@ function stopGame(){
 	TweenMax.killAll(false, true, false);
 }
 
-function saveGame(score, opponentscore, winner){
+function saveGame(score, opponentscore, winner, winStatus){
 
 	const urlParams = new URLSearchParams(window.location.search);
 
@@ -1321,7 +1320,11 @@ function saveGame(score, opponentscore, winner){
 
 	
 	var tokenID = localStorage.getItem("t");
-	if (tokenID != undefined && tokenID != '')
+	if (socket != null) {
+		socket.disconnect();
+	}
+	
+	if (tokenID != undefined && tokenID != '' && (gameData.ai == true || winStatus == 'win'))
 	{
 		localStorage.removeItem("t");
 		$.ajax({
@@ -2961,7 +2964,6 @@ function updateTimerDownGame(){
 
 		updateTimerDown();
 	}
-		
 }
 
 function updateTimerDown(){
@@ -2971,9 +2973,7 @@ function updateTimerDown(){
 	}
 
 	if(timeData.isDown && timeData.timer <= 0){
-		timeData.isDown = false
-		timerDownTxt.text = ""
-		timerDownTxt.visible = false;
+		timeData.isDown = false;
 
 		$.ajax({
 			url: '/bot/info',
@@ -3020,7 +3020,6 @@ function updateTimerDown(){
 			}
 			
 			timeData.oldTimer = timeData.timer;
-			timerDownTxt.text = millisecondsToTimeGame(timeData.timer);
 		}
 	}
 }
