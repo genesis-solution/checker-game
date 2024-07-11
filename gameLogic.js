@@ -200,7 +200,6 @@ function handleSocketEvents(io) {
                               `
                         };
                     
-                        
                         request(soapOptions, function(_err, _resp) {
                           if (_err == null) {
                             if (_resp.statusCode == 200)
@@ -258,6 +257,7 @@ function handleSocketEvents(io) {
                             console.log(_err)
                           }
                         });
+                        
                     } catch (error) {
                     console.error('start game:', error.message);
                     }
