@@ -1171,6 +1171,37 @@ function createSocket() {
 		displayPlayerTurn();
 	});
 
+	socket.on("waitingGroupMember", (opponent) => {
+		timeData.isDown = true;
+	
+		boardSettings.timerDown = 1200000
+	
+		textDisplay.effectduration = 1200000;
+		var end = Date.now() + textDisplay.effectduration;
+	
+		(function frame() {
+		  // launch a few confetti from the left edge
+		  confetti({
+			particleCount: 3,
+			angle: 60,
+			spread: 180,
+			startVelocity: 80,
+			origin: { x: 0.5, y: 1 },
+			// origin: {
+			//     x: Math.random(),
+			//     // since they fall down, start a bit higher than random
+			//     y: Math.random() - 0.2
+			// }
+		  });
+		  if (Date.now() < end && gameData.paused) {
+			requestAnimationFrame(frame);
+		  }
+		})();
+	
+		alertTxt.text = "waiting for " + opponent[0].name;
+	
+	  });
+
 	socket.on('joinedRoom', (roomName) => {
 		textDisplay.room = roomName
 	});
@@ -1241,7 +1272,19 @@ function createSocket() {
 function joinGame(socket) {
 	textDisplay.player2 = Player2.username;
 	if (gameData.ai == false)
-		socket.emit('joinGame', {playerName: textDisplay.player1, player: Player1, isBot: 0});
+	{
+		const urlParams = new URLSearchParams(window.location.search);
+		// Get the value of a specific parameter
+		const eIDGroup = urlParams.get('eIDGroup');
+
+		if (eIDGroup != undefined && eIDGroup != '')
+		{
+			socket.emit('groupGame', {playerName: textDisplay.player1, player: Player1, isBot: 0, eIDGroup: eIDGroup});
+		}
+		else {
+			socket.emit('joinGame', {playerName: textDisplay.player1, player: Player1, isBot: 0});
+		}
+	}
 	else
 		{
 			socket.emit('joinGame', {playerName: Player2.username, player: Player2, isBot: 1});
@@ -1575,12 +1618,9 @@ function buildBoard(){
 				if(!boardSettings.pieceDrag){
 					gameData.board[r][c].cursor = "pointer";
 					gameData.board[r][c].addEventListener("click", function(evt) {
-						boardSettings.countPawn++;
-
-						console.log(boardSettings.countPawn);
 
 						if (boardSettings.countPawn > 20 && socket != null) {
-							socket.emit('giveup', -1)
+							socket.emit('giveup', gameData.player)
 						}
 						if(gameData.paused || gameData.complete || gameData.moving){
 							return;
@@ -1591,19 +1631,29 @@ function buildBoard(){
 								return;
 							}
 							gameData.aiMove = true;
-						}
 
-						if(gameData.board[evt.target.row][evt.target.column].move){
-							if ( typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online) {
-								postSocketUpdate('moveplayer', {row:evt.target.row, column:evt.target.column, pieceIndex:gameData.pieceIndex});
-							}else{
+							if(gameData.board[evt.target.row][evt.target.column].move){
+								boardSettings.countPawn++;
 								movePlayer(evt.target.row, evt.target.column);
 								socket.emit("move_click", {row:evt.target.row, column:evt.target.column, isSelect: false})
+							}else{
+								getCurrentPiece(evt.target.row, evt.target.column);
+								socket.emit("move_click", {row:evt.target.row, column:evt.target.column, isSelect: true})
 							}
-						}else{
-							getCurrentPiece(evt.target.row, evt.target.column);
-							socket.emit("move_click", {row:evt.target.row, column:evt.target.column, isSelect: true})
+						} else {
+							if ((textDisplay.bEmployee == false && gameData.player == 0) || (textDisplay.bEmployee == true && gameData.player == 1))
+							{
+								if(gameData.board[evt.target.row][evt.target.column].move){
+									boardSettings.countPawn++;
+									movePlayer(evt.target.row, evt.target.column);
+									socket.emit("move_click", {row:evt.target.row, column:evt.target.column, isSelect: false})
+								}else{
+									getCurrentPiece(evt.target.row, evt.target.column);
+									socket.emit("move_click", {row:evt.target.row, column:evt.target.column, isSelect: true})
+								}
+							}
 						}
+						
 					});
 				}
 			}
@@ -2555,27 +2605,93 @@ function moveAI() {
 		}
 	}
 
+	
 	if (postData.length > 0) {
 
-		const urlParams = new URLSearchParams(window.location.search);
-		const tokenkey = urlParams.get('t');
-		if (tokenkey != null && tokenkey != '')
-		{
-			$.ajax({
-				url: '/getposition',
-				type: 'POST',
-				data: {
-					't': localStorage.getItem('t'),
-					'run': 1,
-					'gameID': 2,
-					'data': postData
-				},
-				success: function(response) {
-
-					if (response.success == true) {
-
+		// Player2.depth: if 0, easy. if 3, medium. if 7, hard
+		if (Math.floor(Math.random() * 7) < parseInt(Player2.depth)) {
+			const urlParams = new URLSearchParams(window.location.search);
+			const tokenkey = urlParams.get('t');
+			if (tokenkey != null && tokenkey != '')
+			{
+				$.ajax({
+					url: '/getposition',
+					type: 'POST',
+					data: {
+						't': localStorage.getItem('t'),
+						'run': 1,
+						'gameID': 2,
+						'data': postData
+					},
+					success: function(response) {
+	
+						if (response.success == true) {
+	
+							var moves = [];
+	
+							for (var i = 0; i < gameData.piece.length; i++) {
+								thisPiece = gameData.piece[i];
+								if (thisPiece.color == gameData.player) {
+									var diags = getDiags(thisPiece);
+									for (var j = 0; j < diags.length; j++) {
+										diag = diags[j];
+										var diagPc = getPieceAtSquare(thisPiece.nx + diag[0], thisPiece.ny + diag[1]);
+										if (diagPc == 0) {
+											moves.push([thisPiece, diag]);
+										}
+									}
+								}
+							}	
+							
+							if (!moves.length) {
+								nextPlayerTurn();
+								return;
+							}
+	
+							for (let index_move = 0; index_move < moves.length; index_move++) {
+								if (moves[index_move][0].nx == response.start.x && moves[index_move][0].ny == response.start.y) {
+									var move = moves[index_move];
+									thisPiece = move[0];
+									thisPiece.dnx = response.end.x;
+									thisPiece.dny = response.end.y;
+									animatePiece(thisPiece, true);
+								}
+							}
+	
+						}
+						else {
+							var moves = [];
+							for (var i = 0; i < gameData.piece.length; i++) {
+								thisPiece = gameData.piece[i];
+								if (thisPiece.color == gameData.player) {
+									var diags = getDiags(thisPiece);
+									for (var j = 0; j < diags.length; j++) {
+										diag = diags[j];
+										var diagPc = getPieceAtSquare(thisPiece.nx + diag[0], thisPiece.ny + diag[1]);
+										if (diagPc == 0) {
+											moves.push([thisPiece, diag]);
+										}
+									}
+								}
+							}
+							if (!moves.length) {
+								nextPlayerTurn();
+								return;
+							}
+	
+							move = getBestMove(moves);
+							thisPiece = move[0];
+							diag = move[1];
+	
+							thisPiece.dnx = thisPiece.nx + diag[0];
+							thisPiece.dny = thisPiece.ny + diag[1];
+							animatePiece(thisPiece, true);
+						}
+					},
+					error: function(xhr, status, error) {
+						console.log(status, error);
+	
 						var moves = [];
-
 						for (var i = 0; i < gameData.piece.length; i++) {
 							thisPiece = gameData.piece[i];
 							if (thisPiece.color == gameData.player) {
@@ -2588,85 +2704,52 @@ function moveAI() {
 									}
 								}
 							}
-						}	
-						
-						if (!moves.length) {
-							nextPlayerTurn();
-							return;
-						}
-
-						for (let index_move = 0; index_move < moves.length; index_move++) {
-							if (moves[index_move][0].nx == response.start.x && moves[index_move][0].ny == response.start.y) {
-								var move = moves[index_move];
-								thisPiece = move[0];
-								thisPiece.dnx = response.end.x;
-								thisPiece.dny = response.end.y;
-								animatePiece(thisPiece, true);
-							}
-						}
-
-					}
-					else {
-						var moves = [];
-						for (var i = 0; i < gameData.piece.length; i++) {
-							thisPiece = gameData.piece[i];
-							if (thisPiece.color == gameData.player) {
-								var diags = getDiags(thisPiece);
-								for (var j = 0; j < diags.length; j++) {
-									diag = diags[j];
-									var diagPc = getPieceAtSquare(thisPiece.nx + diag[0], thisPiece.ny + diag[1]);
-									if (diagPc == 0) {
-										moves.push([thisPiece, diag]);
-									}
-								}
-							}
 						}
 						if (!moves.length) {
 							nextPlayerTurn();
 							return;
 						}
-
-						move = getBestMove(moves);
+	
+						var move = getBestMove(moves);
 						thisPiece = move[0];
 						diag = move[1];
-
+	
 						thisPiece.dnx = thisPiece.nx + diag[0];
 						thisPiece.dny = thisPiece.ny + diag[1];
 						animatePiece(thisPiece, true);
 					}
-				},
-				error: function(xhr, status, error) {
-					console.log(status, error);
-
-					var moves = [];
-					for (var i = 0; i < gameData.piece.length; i++) {
-						thisPiece = gameData.piece[i];
-						if (thisPiece.color == gameData.player) {
-							var diags = getDiags(thisPiece);
-							for (var j = 0; j < diags.length; j++) {
-								diag = diags[j];
-								var diagPc = getPieceAtSquare(thisPiece.nx + diag[0], thisPiece.ny + diag[1]);
-								if (diagPc == 0) {
-									moves.push([thisPiece, diag]);
-								}
-							}
+				});
+			}
+		}
+		else {
+			var moves = [];
+			for (var i = 0; i < gameData.piece.length; i++) {
+				thisPiece = gameData.piece[i];
+				if (thisPiece.color == gameData.player) {
+					var diags = getDiags(thisPiece);
+					for (var j = 0; j < diags.length; j++) {
+						diag = diags[j];
+						var diagPc = getPieceAtSquare(thisPiece.nx + diag[0], thisPiece.ny + diag[1]);
+						if (diagPc == 0) {
+							moves.push([thisPiece, diag]);
 						}
 					}
-					if (!moves.length) {
-						nextPlayerTurn();
-						return;
-					}
-
-					move = getBestMove(moves);
-					thisPiece = move[0];
-					diag = move[1];
-
-					thisPiece.dnx = thisPiece.nx + diag[0];
-					thisPiece.dny = thisPiece.ny + diag[1];
-					animatePiece(thisPiece, true);
 				}
-			});
+			}
+			if (!moves.length) {
+				nextPlayerTurn();
+				return;
+			}
+
+			var move = getBestMove(moves);
+			thisPiece = move[0];
+			diag = move[1];
+
+			thisPiece.dnx = thisPiece.nx + diag[0];
+			thisPiece.dny = thisPiece.ny + diag[1];
+			animatePiece(thisPiece, true);
 		}
+		
 
 	}
 }
@@ -2975,42 +3058,58 @@ function updateTimerDown(){
 	if(timeData.isDown && timeData.timer <= 0){
 		timeData.isDown = false;
 
-		$.ajax({
-			url: '/bot/info',
-			type: 'GET',
-			data: {
-					't': localStorage.getItem('t'),
-					'gameID': 2,
-					betUsd: Player1.betUsd
+		const urlParams = new URLSearchParams(window.location.search);
+		// Get the value of a specific parameter
+		const eIDGroup = urlParams.get('eIDGroup');
+
+		if (eIDGroup != undefined && eIDGroup != '')
+		{
+			setTimeout(() => {
+				redirectToWithAuth(
+					"https://www.player1.win/games/2/checkers",
+					"Your friend didn't came online 🙁",
+					0
+				);
+			}, 3000);
+		}
+		else {
+			$.ajax({
+				url: '/bot/info',
+				type: 'GET',
+				data: {
+						't': localStorage.getItem('t'),
+						'gameID': 2,
+						betUsd: Player1.betUsd
+					},
+				success: function(response) {
+
+					Player2 = response;
+
+					textDisplay.computer = removeCharsBetweenParentheses(response.username);
+					textDisplay.computerTurn = removeCharsBetweenParentheses(response.username) + ' turn';
+					$.players['player'+ 1].text = removeCharsBetweenParentheses(response.username);
+
+					checkGameType(true);
+					goPage('game');
+
+					startGame();
+
 				},
-			success: function(response) {
+				error: function(xhr, status, error) {
+					// Handle errors
 
-				Player2 = response;
-
-				textDisplay.computer = removeCharsBetweenParentheses(response.username);
-				textDisplay.computerTurn = removeCharsBetweenParentheses(response.username) + ' turn';
-				$.players['player'+ 1].text = removeCharsBetweenParentheses(response.username);
-
-				checkGameType(true);
-				goPage('game');
-
-				startGame();
-
-			},
-			error: function(xhr, status, error) {
-				// Handle errors
-
-				if (socket != null) {
-					socket.disconnect();
+					if (socket != null) {
+						socket.disconnect();
+					}
+					if (xhr.status === 400) {
+						redirectToWithAuth('https://www.player1.win/games/2/checkers', 'Token invalid', 0);
+					} else {
+						console.error('Error:', errorThrown);
+						location.reload();
+					}
 				}
-				if (xhr.status === 400) {
-					redirectToWithAuth('https://www.player1.win/games/2/checkers', 'Token invalid', 0);
-				} else {
-					console.error('Error:', errorThrown);
-					location.reload();
-				}
-			}
-		});
+			});
+		}
 	}else{
 		if(Math.abs((timeData.oldTimer - timeData.timer)) > 1000){
 			if(timeData.timer < 1000){
