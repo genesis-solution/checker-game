@@ -103,7 +103,10 @@ var textDisplay = {
 					currentTurn: 'me',
 					giveup: 'no',
 					winEffect: 'yes',
-					effectduration: ''
+					effectduration: '',
+					isOnline: true,
+					isActive: true,
+					isOpponentActive: true
 				}
 
 let cardWidth = 15;
@@ -999,43 +1002,72 @@ function goPage(page){
 			var textMessage = '';
 			var textTitle = '';
 
-			var winStatus = '';
-
 			buttonTiktok.visible = false;
 
-			if (textDisplay.giveup == 0) {
-				winner = Player2.entityId;
-				if (textDisplay.bEmployee == false) { // fail
-					winStatus = 'fail'
-				} else { // success
-					winStatus = 'win'
-				}
-			} else if (textDisplay.giveup == 1) {
-				winner = Player1.entityId;
-				if (textDisplay.bEmployee == false) { // success
-					winStatus = 'win'
-				} else { // fail
-					winStatus = 'fail'
-				}
-			} else {
-				if (playerData.score > playerData.opponentScore) {
-					winner = Player1.entityId;
-					if (textDisplay.bEmployee == false) { // success
-						winStatus = 'win'
-					} else { // fail
-						winStatus = 'fail'
-					}
-				} else if (playerData.score < playerData.opponentScore) {
+			if (textDisplay.isOnline == true) 
+			{
+				var winStatus = '';
+
+				if (textDisplay.giveup == 0) {
 					winner = Player2.entityId;
 					if (textDisplay.bEmployee == false) { // fail
 						winStatus = 'fail'
 					} else { // success
 						winStatus = 'win'
 					}
-				} 
-				else { // Draw
-					winner = '';
-					textTitle = "Draw! \n\n 🙁  \n\n"
+				} else if (textDisplay.giveup == 1) {
+					winner = Player1.entityId;
+					if (textDisplay.bEmployee == false) { // success
+						winStatus = 'win'
+					} else { // fail
+						winStatus = 'fail'
+					}
+				} else {
+					if (playerData.score > playerData.opponentScore) {
+						winner = Player1.entityId;
+						if (textDisplay.bEmployee == false) { // success
+							winStatus = 'win'
+						} else { // fail
+							winStatus = 'fail'
+						}
+					} else if (playerData.score < playerData.opponentScore) {
+						winner = Player2.entityId;
+						if (textDisplay.bEmployee == false) { // fail
+							winStatus = 'fail'
+						} else { // success
+							winStatus = 'win'
+						}
+					} 
+					else { // Draw
+						winner = Player1.entityId;
+						if (textDisplay.bEmployee == false) { // success
+							winner = Player1.entityId;
+						} else { // fail
+							winner = Player2.entityId;
+						}
+
+						winStatus = 'win'
+					}
+				}
+	
+				if (winStatus == 'win') {
+					textTitle = "You won!!!!";
+					textMessage = "Congratulations, you won:"
+					resultPriceTxt.text = "$" + Player1.prizeUSD;
+					resultTitleTxt.font = "60px bpreplaybold";
+	
+					if (textDisplay.winEffect == 'yes')
+					{
+						textDisplay.winEffect = 'no';
+						particles = [];
+						for (var i = 0; i < maxConfettis; i++) {
+							particles.push(new confettiParticle());
+						}
+						Draw();
+					}
+				}
+				else if (winStatus == 'fail') {
+					textTitle = "The outcome of this game favors the opponent.\n\n 🙁  \n\n"
 					textMessage = "\n\nOne more try,\nyou've got this!";
 					resultTitleTxt.font = "20px bpreplaybold";
 					resultShareTxt.visible = false;
@@ -1044,27 +1076,17 @@ function goPage(page){
 					buttonWhatsapp.visible = false;
 					resultPriceTxt.visible = false;
 				}
+	
+				if (boardSettings.isSubmitResult == true)
+					saveGame(playerData.score, playerData.opponentScore, winner, winStatus);
+				else
+					saveGame(playerData.score, playerData.opponentScore, '', winStatus);
 			}
-
-			if (winStatus == 'win') {
-				textTitle = "You won!!!!";
-				textMessage = "Congratulations, you won:"
-				resultPriceTxt.text = "$" + Player1.prizeUSD;
-				resultTitleTxt.font = "60px bpreplaybold";
-
-				if (textDisplay.winEffect == 'yes')
-				{
-					textDisplay.winEffect = 'no';
-					particles = [];
-					for (var i = 0; i < maxConfettis; i++) {
-						particles.push(new confettiParticle());
-					}
-					Draw();
-				}
-			}
-			else if (winStatus == 'fail') {
-				textTitle = "The outcome of this game favors the opponent.\n\n 🙁  \n\n"
+			else {
+				textTitle =
+				"Ops, Your device got disconnected.\n\n 📴  \n\n";
 				textMessage = "\n\nOne more try,\nyou've got this!";
+
 				resultTitleTxt.font = "20px bpreplaybold";
 				resultShareTxt.visible = false;
 				buttonFacebook.visible = false;
@@ -1072,19 +1094,13 @@ function goPage(page){
 				buttonWhatsapp.visible = false;
 				resultPriceTxt.visible = false;
 			}
+			
 
 			resultTitleTxt.text = textTitle;
 			resultDescTxt.text = textMessage;
-
-			if (boardSettings.isSubmitResult == true)
-			saveGame(playerData.score, playerData.opponentScore, winner, winStatus);
-			else
-			saveGame(playerData.score, playerData.opponentScore, '', winStatus);
-
-			if (socket != null) {
-				socket.disconnect();
-			}
+			
 			break;
+
 		case 'result_no':
 				stopGame();
 				
@@ -1108,9 +1124,6 @@ function goPage(page){
 	
 				saveGame(playerData.score, playerData.opponentScore, winner, winStatus);
 	
-				if (socket != null) {
-					socket.disconnect();
-				}
 				break;
 	}
 	
@@ -1198,7 +1211,7 @@ function createSocket() {
 		  }
 		})();
 	
-		alertTxt.text = "waiting for " + opponent[0].name;
+		alertTxt.text = opponent[0].name;
 	
 	});
 
@@ -1229,7 +1242,7 @@ function createSocket() {
 	});
 
 	socket.on('playerDisconnected', (roomName) => {
-		if (roomName == textDisplay.room) {
+		if (socket != null && roomName == textDisplay.room) {
 			endGame();
 		}
 	});
@@ -1240,6 +1253,10 @@ function createSocket() {
 			togglePieceDragEvent(moveData.data, moveData.con);
 		}
 	});
+
+	socket.on("active_status", (activeStatus) => {
+		textDisplay.isOpponentActive = activeStatus
+	  });
 
 	socket.on('opponentMove_click', (moveData) => {
 		// Handle opponent's move
@@ -1266,6 +1283,16 @@ function createSocket() {
 		redirectToWithAuth('/login', "You are already playing", "");
 	});
 
+	socket.on('disconnect', () => {
+
+		if (textDisplay.winEffect == 'yes')
+		{
+			textDisplay.isOnline = false;
+			goPage("result");
+		}
+		
+	  });
+
 	joinGame(socket)
 }
 
@@ -1275,11 +1302,11 @@ function joinGame(socket) {
 	{
 		const urlParams = new URLSearchParams(window.location.search);
 		// Get the value of a specific parameter
-		const eIDGroup = urlParams.get('eIDGroup');
+		const invite_room = urlParams.get('invite_room');
 
-		if (eIDGroup != undefined && eIDGroup != '')
+		if (invite_room != undefined && invite_room != '')
 		{
-			socket.emit('groupGame', {playerName: textDisplay.player1, player: Player1, isBot: 0, eIDGroup: eIDGroup});
+			socket.emit('groupGame', {playerName: textDisplay.player1, player: Player1, isBot: 0, invite_room: invite_room});
 		}
 		else {
 			socket.emit('joinGame', {playerName: textDisplay.player1, player: Player1, isBot: 0});
@@ -1363,9 +1390,7 @@ function saveGame(score, opponentscore, winner, winStatus){
 
 	
 	var tokenID = localStorage.getItem("t");
-	if (socket != null) {
-		socket.disconnect();
-	}
+	
 	
 	if (tokenID != undefined && tokenID != '' && (gameData.ai == true || winStatus == 'win'))
 	{
@@ -1941,18 +1966,15 @@ function nextPlayerTurn() {
 		gameData.complete = true;
 		endGame();
 	}else{
-		if ( typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online) {
-			
-		}else{
-			togglePlayer();
-			displayPlayerTurn();
-			gameData.moving = false;
+		togglePlayer();
+		displayPlayerTurn();
 
-			if(gameData.player == 1 && gameData.ai){
-				TweenMax.to(boardContainer, 1, {overwrite:true, onComplete:function(){
-					moveAI();
-				}});
-			}
+		gameData.moving = false;
+
+		if(gameData.player == 1 && gameData.ai){
+			TweenMax.to(boardContainer, 1, {overwrite:true, onComplete:function(){
+				moveAI();
+			}});
 		}
 	}
 }
@@ -2467,12 +2489,12 @@ function redirectToWithAuth(url, authToken, noError) {
 		headerInput.name = 't';
 		const _urlParams = new URLSearchParams(window.location.search);
 		// Get the value of a specific parameter
-		const _eIDGroup = _urlParams.get('eIDGroup'); // Returns 'value1'
-		if (_eIDGroup != undefined && _eIDGroup != '') {
+		const _invite_room = _urlParams.get('invite_room'); // Returns 'value1'
+		if (_invite_room != undefined && _invite_room != '') {
 		var groupInput = document.createElement('input');
 			groupInput.type = 'hidden';
-			groupInput.name = 'eIDGroup';
-			groupInput.value = _eIDGroup; 
+			groupInput.name = 'invite_room';
+			groupInput.value = _invite_room; 
 		}
 	} else {
 		headerInput.name = 'e';
@@ -2991,18 +3013,25 @@ function updateGame(){
 			timeData.nowDate = new Date();
 			timeData.elapsedTime = Math.floor((timeData.nowDate.getTime() - timeData.startDate.getTime()));
 
-			if(gameData.player == 0){
-				// timeData.playerTimer = Math.floor(timeData.elapsedTime + timeData.playerAccumulate);
-				timeData.playerTimer = Math.floor(timeData.countdown - timeData.elapsedTime);
-			}
-			else{
-				//timeData.opponentTimer = Math.floor(timeData.elapsedTime + timeData.opponentAccumulate);	
-				timeData.opponentTimer = Math.floor(timeData.countdown - timeData.elapsedTime);
+			if (textDisplay.isActive == true)
+			{
+				if(gameData.player == 0){
+					// timeData.playerTimer = Math.floor(timeData.elapsedTime + timeData.playerAccumulate);
+					timeData.playerTimer = Math.floor(timeData.countdown - timeData.elapsedTime);
+				}
+				else {
+					//timeData.opponentTimer = Math.floor(timeData.elapsedTime + timeData.opponentAccumulate);	
+					timeData.opponentTimer = Math.floor(timeData.countdown - timeData.elapsedTime);
+				}
 			}
 
 			if (gameData.ai == false) {
 				if (socket != null && textDisplay.bEmployee == false) {
 					socket.emit("updatetimer", {playerTimer: timeData.playerTimer, opponentTimer: timeData.opponentTimer});
+				}
+
+				if (textDisplay.isOpponentActive == false) {
+					updateTimer();
 				}
 			}
 			else {
@@ -3069,9 +3098,9 @@ function updateTimerDown(){
 
 		const urlParams = new URLSearchParams(window.location.search);
 		// Get the value of a specific parameter
-		const eIDGroup = urlParams.get('eIDGroup');
+		const invite_room = urlParams.get('invite_room');
 
-		if (eIDGroup != undefined && eIDGroup != '')
+		if (invite_room != undefined && invite_room != '')
 		{
 			setTimeout(() => {
 				redirectToWithAuth(
@@ -3082,11 +3111,12 @@ function updateTimerDown(){
 			}, 3000);
 		}
 		else {
+			const t = urlParams.get('t');
 			$.ajax({
 				url: '/bot/info',
 				type: 'GET',
 				data: {
-						't': localStorage.getItem('t'),
+						't': t,
 						'gameID': 2,
 						betUsd: Player1.betUsd
 					},
@@ -3106,10 +3136,6 @@ function updateTimerDown(){
 				},
 				error: function(xhr, status, error) {
 					// Handle errors
-
-					if (socket != null) {
-						socket.disconnect();
-					}
 					if (xhr.status === 400) {
 						redirectToWithAuth('https://www.player1.win/games/2/checkers', 'Token invalid', 0);
 					} else {
@@ -3413,3 +3439,43 @@ function share(action){
 	
 	window.open(shareurl);
 }
+
+document.addEventListener('visibilitychange', function() {
+	if (document.hidden) {
+		textDisplay.isActive = false;
+		socket.emit("active_status", false);
+	} else {
+		textDisplay.isActive = true;
+		socket.emit("active_status", true);
+	}
+});
+
+document.addEventListener('mozvisibilitychange', function() {
+	if (document.hidden) {
+		textDisplay.isActive = false;
+		socket.emit("active_status", false);
+	} else {
+		textDisplay.isActive = true;
+		socket.emit("active_status", true);
+	}
+});
+
+document.addEventListener('webkitvisibilitychange', function() {
+	if (document.hidden) {
+		textDisplay.isActive = false;
+		socket.emit("active_status", false);
+	} else {
+		textDisplay.isActive = true;
+		socket.emit("active_status", true);
+	}
+});
+
+document.addEventListener('msvisibilitychange', function() {
+	if (document.hidden) {
+		textDisplay.isActive = false;
+		socket.emit("active_status", false);
+	} else {
+		textDisplay.isActive = true;
+		socket.emit("active_status", true);
+	}
+});
