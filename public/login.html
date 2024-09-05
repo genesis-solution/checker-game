@@ -25,12 +25,16 @@
   <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
   <script>
     
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // Get the value of a specific parameter
+    const tokenkey = urlParams.get('t'); // Returns 'value1'
+
+    let lang = urlParams.get('lang'); // Returns 'value1'
+    if (lang == undefined || lang == '') lang = 'en'
+      
     try {
-        const urlParams = new URLSearchParams(window.location.search);
-
-        // Get the value of a specific parameter
-        const tokenkey = urlParams.get('t'); // Returns 'value1'
-
+        
         if (tokenkey != undefined && tokenkey != '')
         {
           localStorage.setItem('t', tokenkey);
@@ -50,25 +54,25 @@
               } else {
                   // document.getElementById('alert').style.display = "block"
                   // document.getElementById('responseMessage').innerText = data.error;
-                  redirectToWithAuth('https://www.player1.win/games/2/checkers', data.error, 0);
+                  redirectToWithAuth('https://www.player1.win/'+lang+'/games/2/checkers', data.error, 0);
               }
           };
           xhr.onerror = function() {
               console.error('An error occurred.');
               document.getElementById('alert').style.display = "block"
               document.getElementById('responseMessage').innerText = 'An error occurred. Please try again later.';
-              redirectToWithAuth('https://www.player1.win/games/2/checkers', 'You are already in the middle of another game. It is not permitted to play multiple games simultaneously.', 0);
+              redirectToWithAuth('https://www.player1.win/'+lang+'/games/2/checkers', 'You are already in the middle of another game. It is not permitted to play multiple games simultaneously.', 0);
           };
           xhr.send(JSON.stringify({ t: tokenkey, gameID: 2 }));
         } else {
-          redirectToWithAuth('https://www.player1.win/games/2/checkers', 'Token not found', 0);
+          redirectToWithAuth('https://www.player1.win/'+lang+'/games/2/checkers', 'Token not found', 0);
         }
     
       } catch (error) {
           console.error('Error:', error);
           document.getElementById('alert').style.display = "block"
           document.getElementById('responseMessage').innerText = 'An error occurred. Please try again later.';
-          redirectToWithAuth('https://www.player1.win/games/2/checkers', 'You are already in the middle of another game. It is not permitted to play multiple games simultaneously.', 0);
+          redirectToWithAuth('https://www.player1.win/'+lang+'/games/2/checkers', 'You are already in the middle of another game. It is not permitted to play multiple games simultaneously.', 0);
       }
 
       function redirectToWithAuth(url, authToken, noError) {
