@@ -1059,7 +1059,8 @@ function goPage(page){
 				if (winStatus == 'win') {
 					textTitle = "You won!!!!";
 					textMessage = "Congratulations, you won:"
-					resultPriceTxt.text = "$" + Player1.prizeUSD;
+					resultPriceTxt.text = Player1.prizeUSD;
+					imageP1.visible = true;
 					resultTitleTxt.font = "60px bpreplaybold";
 	
 					if (textDisplay.winEffect == 'yes')

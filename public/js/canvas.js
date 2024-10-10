@@ -29,7 +29,7 @@ function initGameCanvas(w,h){
 
 var guide = false;
 var canvasContainer, mainContainer, gameContainer, instructionContainer, resultContainer, moveContainer, confirmContainer;
-var guideline, bg, logo, buttonOk, result, shadowResult, buttonReplay, buttonFacebook, buttonTwitter, buttonWhatsapp, buttonFullscreen, buttonSoundOn, buttonSoundOff, buttonTiktok;
+var guideline, bg, logo, buttonOk, result, shadowResult, imageP1, buttonReplay, buttonFacebook, buttonTwitter, buttonWhatsapp, buttonFullscreen, buttonSoundOn, buttonSoundOff, buttonTiktok;
 
 $.players = {};
 
@@ -367,6 +367,8 @@ function buildGameCanvas(response){
 	resultPriceTxt.textBaseline='alphabetic';
 	resultPriceTxt.text = '';
 	
+	imageP1 = new createjs.Bitmap(loader.getResult('p1'));
+	imageP1.visible = false;
 	
 	buttonFacebook = new createjs.Bitmap(loader.getResult('buttonFacebook'));
 	buttonTwitter = new createjs.Bitmap(loader.getResult('buttonTwitter'));
@@ -455,7 +457,7 @@ function buildGameCanvas(response){
 	mainContainer.addChild(logo, logoP, buttonTypeContainer, buttonPlayerContainer, buttonLocalContainer, buttonStart);
 	boardContainer.addChild(boardDesignContainer, boardIconContainer, boardStroke, statusContainer);
 	gameContainer.addChild(boardContainer, emojiContainer, emojiSettingContainer);
-	resultContainer.addChild(itemResult, itemResultP, buttonContinue, resultTitleTxt, resultDescTxt, resultPriceTxt);
+	resultContainer.addChild(itemResult, itemResultP, buttonContinue, resultTitleTxt, resultDescTxt, resultPriceTxt, imageP1);
 	
 	if(shareEnable){
 		resultContainer.addChild(resultShareTxt, buttonFacebook, buttonTwitter, buttonTiktok, buttonWhatsapp);
@@ -608,6 +610,9 @@ function changeCanvasViewport(){
 			resultPriceTxt.x = canvasW/2;
 			resultPriceTxt.y = canvasH/100 * 44;
 			
+			imageP1.x = canvasW/2 - 33;
+			imageP1.y = canvasH/100 * 43 - 18;
+
 			//exit
 			itemExit.visible = true;
 			itemExitP.visible = false;
@@ -744,6 +749,9 @@ function changeCanvasViewport(){
 
 			resultPriceTxt.x = canvasW/2;
 			resultPriceTxt.y = canvasH/100 * 45;
+
+			imageP1.x = canvasW/2 - 33;
+			imageP1.y = canvasH/100 * 45 - 18;
 			
 			//exit
 			itemExit.visible = false;
